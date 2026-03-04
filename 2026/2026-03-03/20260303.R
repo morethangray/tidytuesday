@@ -18,30 +18,57 @@ tortoise_body_condition_cleaned <- tuesdata$tortoise_body_condition_cleaned
 # Load fonts --------------------------------------------------------------
 
 # Define local path to Font Awesome files
-fa_path <- "/Users/morgangray/Library/Fonts/Font Awesome 7 Brands-Regular-400.otf"
-# fa_path <- "/Path/to/Font Awesome 7 Brands-Regular-400.otf"
-
+fa_path <- "assets/fonts/Font Awesome 7 Brands-Regular-400.otf"
+font_add(family = "fa-brands", regular = fa_path)
 font_add_google("Lexend", family = "Lexend Base", regular.wt = 300, bold.wt = 700)
 font_add_google("Lexend", family = "Lexend Book", regular.wt = 500, bold.wt = 700)
-font_add(family = "fa-brands", regular = fa_path)
 showtext_auto()
 showtext_opts(dpi = 300)
 
 
-# Define colours and fonts-------------------------------------------------
+# Define colors and fonts -------------------------------------------------
 
-base_family <- "Lexend Base"
-heading_family <- "Lexend Book"
+family_base <- "Lexend Base"
+family_heading <- "Lexend Book"
 color_base <- "#535353"
 color_ink <- colorspace::adjust_transparency(color_base, alpha = 0.7)
 color_heading <- colorspace::adjust_transparency(color_base, alpha = 0.5)
 color_text <- colorspace::adjust_transparency(color_base, alpha = 0.4)
 color_paper <- "white"
-base_size <- 9
-font_size_caption <- 0.7 * base_size
-font_size_axis <- base_size
-font_size_subtitle <- base_size * 1.1
-font_size_title <- base_size * 1.7
+size_base <- 9
+size_font_axis <- size_base
+size_font_title <- 1.7 * size_base
+size_font_subtitle <- 1.2 * size_base
+size_font_caption <- 0.75 * size_base
+size_font_legend <- 0.9 * size_base
+
+
+# Define ggplot2 layout  --------------------------------------------------
+
+width_png <- 7
+height_png <- 6
+units_png <- "in"
+dpi_png <- 300
+margin_title <- margin(t = 0, b = 5)
+margin_subtitle <- margin(t = 5, b = 20)
+margin_caption <- margin(t = 15, b = 0, l = -15)
+margin_axis_text_y <- margin(r = 2)
+margin_legend <- margin(t = 5, b = 5, r = 5, l = 15)
+margin_legend_title <- margin(t = 1.5, b = 5, r = 1.5, l = 1.5)
+margin_legend_text <- margin(t = 2, r = 4, b = 2, l = 4)
+margin_plot <- margin(t = 15, b = 10, l = 15, r = 15)
+margin_strip_text <- margin(b = 0)
+panel_spacing_y <- unit(9, "mm")
+width_subtitle <- 1 
+width_caption <- 1.2
+lineheight_subtitle <- 1.3
+legend_position <- "right"
+legend_justification_r <- "top"
+
+stroke_point <- 0.4
+alpha_point_fill <- 0.1
+linewidth_breaks <- 0.2
+alpha_breaks <- 0.3
 
 
 # Data wrangling ----------------------------------------------------------
@@ -80,32 +107,35 @@ plotdata <-
   # Sort so the larger Plateau circles are underneath
   arrange(locality)
 
-
-# Plot configuration ------------------------------------------------------
-
-col_palette <- c("#69bfc9", "#9a9894", "#e4b568")
-names(col_palette) <- levels(plotdata$locality)
+values_colors <- c("#69bfc9", "#9a9894", "#e4b568")
+names(values_colors) <- levels(plotdata$locality)
 
 # Define the limits for the group values (year)
-group_min <- min(plotdata$year)
-group_max <- max(plotdata$year)
+min_group <- min(plotdata$year)
+max_group <- max(plotdata$year)
+expand_group <- c(0.01, 0.4)
 
 # Define the limits and breaks for the metric values
-metric_limit <- round(max(plotdata$value)) 
-metric_breaks <- seq(0, metric_limit, 3)
-metric_lines <- setdiff(metric_breaks, 0)  # Exclude line at y-intercept
- 
-# Define the size breaks for the circle legend
-size_min <- min(plotdata$size) 
-size_max <- round(max(plotdata$size), -1)
-size_breaks <- c(1, 10, 100, 200, 640)  
+min_metric <- round(min(plotdata$value))-1
+max_metric <- round(max(plotdata$value))  
+breaks_metric <- seq(min_metric, max_metric, 2)
+
+# Circles 
+range_size <- c(0.9, 8)
+name_size <- "# Records"
+min_size <- min(plotdata$size) 
+max_size <- round(max(plotdata$size), -1)
+limits_size <- c(min_size, max_size + 1)
+breaks_size <- c(1, 10, 100, 200, 640)  # Legend breaks 
 
 
 # Define text -------------------------------------------------------------
 
-title <- glue("Female turtles were consistently healthier at <span style='color:{col_palette[[\"Konjsko\"]]};'>**Konjsko**</span>")
-st <- glue("Average body condition for female and male Hermann's tortoises in Lake Prespa, North Macedonia from Summer records collected at <span style='color:{col_palette[[\"Beach\"]]};'>**Beach**</span>, <span style='color:{col_palette[[\"Konjsko\"]]};'>**Konjsko**</span>, and <span style='color:{col_palette[[\"Plateau\"]]};'>**Plateau**</span> localities (2008-2023; no data for Summer 2013). Larger body condition index values indicate better health. Circles show the number of records at each timepoint. The greatest number of records were for males at <span style='color:{col_palette[[\"Plateau\"]]};'>**Plateau**</span>.")
-cap <- glue(
+title_text <- glue("Female tortoises were healthier <span style='color:{values_colors[[\"Konjsko\"]]};'>**in places with fewer males**</span>")
+
+subtitle_text <- glue("Average body condition of female and male Hermann's tortoises for three locations at Lake Prespa, North Macedonia: <span style='color:{values_colors[[\"Beach\"]]};'>**Beach**</span>, <span style='color:{values_colors[[\"Konjsko\"]]};'>**Konjsko**</span>, and <span style='color:{values_colors[[\"Plateau\"]]};'>**Plateau**</span> (Summer records only; no 2013 data). A higher score indicates a healthier animal. Circle size shows how many individuals were measured per timepoint. Notably, <span style='color:{values_colors[[\"Plateau\"]]};'>**Plateau**</span> males consistently had the most records.")
+
+caption_text <- glue(
   "**Source:** Sex Ratio Bias Triggers Demographic Suicide in a Dense Tortoise Population 
   (Arsovski et al. 2026) | **Graphic:** <span style='font-family:fa-brands;'>&#xe671;</span> morgangray <span style='font-family:fa-brands;'>&#xf09b;</span> morethangray"
 )
@@ -118,58 +148,50 @@ plot <-
   data = plotdata, 
   mapping = aes(x = year_offset, y = value, color = locality)
 ) +
-  ggh4x::facet_wrap2(vars(sex), ncol = 1, trim_blank = FALSE) +
+  ggh4x::facet_wrap2(
+    vars(sex), 
+    ncol = 1, 
+    trim_blank = FALSE
+    ) +
   geom_line(alpha = 0.2, linewidth = 1) +
   geom_point(
     shape = 21,
-    stroke = 0.5,
+    stroke = stroke_point,
     aes(
-      size = size,
-      fill = after_scale(alpha(color, 0.1))
-    )
+      size = size, 
+      fill = after_scale(alpha(color, alpha_point_fill))
+      )
   ) + 
   scale_size_continuous(
-    range = c(1, 10), 
-    name = "# Records", 
-    breaks = size_breaks, 
-    limits = c(size_min, size_max + 1), 
+    range = range_size, 
+    name = name_size, 
+    breaks = breaks_size, 
+    limits = limits_size, 
     guide = guide_legend(reverse = TRUE)
     ) +
-  scale_colour_manual(
-    values = col_palette, 
-    guide = NULL
-    ) +
+  scale_colour_manual(values = values_colors, guide = NULL) +
   labs(
     x = NULL, 
     y = NULL, 
-    title = title, 
-    subtitle = st, 
-    caption = cap
+    title = title_text, 
+    subtitle = subtitle_text, 
+    caption = caption_text
     ) +
   scale_y_continuous(
-    expand = c(0.01, 0.01),
-    breaks = metric_breaks,
-    limits = c(0, metric_limit)
+    breaks = breaks_metric,
+    limits = c(min_metric, max_metric)
     ) +
-  scale_x_continuous(
-    limits = c(group_min, group_max + 0.5)
-  ) +
+  scale_x_continuous(expand = expand_group) +
   geom_hline(
-    yintercept = 0, 
-    linewidth = 0.2, 
-    alpha = 0.2, 
-    color = color_ink
-  ) +
-  geom_hline(
-    yintercept = metric_lines,
-    linewidth = 0.2, 
-    alpha = 0.3, 
+    yintercept = breaks_metric,
+    linewidth = linewidth_breaks, 
+    alpha = alpha_breaks, 
     color = color_ink, 
     linetype = "dotted"
   ) +
   theme_minimal(
-    base_size = base_size,
-    base_family = base_family,
+    base_size = size_base,
+    base_family = family_base,
     ink = color_ink,
     paper = color_paper 
   ) +
@@ -178,83 +200,80 @@ plot <-
       colour = color_ink,
       hjust = 0,
       halign = 0,
-      margin = margin(t = 0, b = 2),
-      family = base_family,
+      margin = margin_title,
+      family = family_base,
       face = "bold",
-      size = font_size_title 
-    ),
+      size = size_font_title 
+    ), 
     plot.subtitle = element_textbox_simple(
       colour = color_ink,
       hjust = 0,
       halign = 0,
-      margin = margin(t = 5, b = 15),
-      family = base_family,
-      face = "plain",
-      size = font_size_subtitle,
-      lineheight = 1.3,
-      width = 1
+      margin = margin_subtitle,
+      family = family_base,
+      size = size_font_subtitle,
+      lineheight = lineheight_subtitle,
+      width = width_subtitle
     ),
     plot.caption = element_textbox_simple(
       colour = color_text,
       hjust = 0,
       halign = 0,
-      margin = margin(t = 10, b = 0, l = -10),
-      family = base_family,
-      size = font_size_caption,
-      width = 1.2
+      margin = margin_caption,
+      family = family_base,
+      size = size_font_caption,
+      width = width_caption
     ),
     plot.title.position = "plot",
+    plot.margin = margin_plot,
     
     # Axes
     axis.title = element_blank(), 
     axis.text = element_text(
-      size = font_size_axis, 
+      size = size_font_axis, 
       hjust = 0.5, 
       color = color_text
       ), 
-    axis.text.y = element_text(margin = margin(r = 2), hjust = 1), 
+    axis.text.y = element_text(margin = margin_axis_text_y, hjust = 1), 
     
     # Facet panels
     panel.grid = element_blank(),
     panel.border = element_blank(),
-    panel.spacing.y = unit(9, "mm"),
+    panel.spacing.y = panel_spacing_y,
     strip.background = element_blank(),
     strip.text.x.top = element_text(
-      family = heading_family,
-      size = font_size_subtitle, 
+      family = family_heading,
+      size = size_font_subtitle, 
       color = color_heading,
       hjust = 0, 
-      margin = margin(b = 3)
+      margin = margin_strip_text
       ), 
     
     # Legend
-    legend.position = "right", 
-    legend.justification.right = "top",
+    legend.position = legend_position, 
+    legend.justification.right = legend_justification_r, 
+    legend.margin = margin_legend,
     legend.title = element_text(
-      family = base_family,
-      size = font_size_axis,
+      family = family_base,
+      size = size_font_axis,
       color = color_text,
-      margin = margin(t = 1.5, b = 5, r = 1.5, l = 1.5)
+      margin = margin_legend_title
     ),
     legend.text = element_text(
-      family = base_family,
-      size = 0.9 * font_size_axis,  
+      family = family_base,
+      size = size_font_legend,  
       color = color_text,
       vjust = 0.5,
-      margin = margin(t = 2, r = 4, b = 2, l = 4)
-    ), 
-    legend.margin = margin(t = 5, b = 5, r = 5, l = 15), 
+      margin = margin_legend_text
+    )
     
-    # Plot margins
-    plot.margin = margin(t = 10, b = 10, l = 10, r = 10)
   )  +
   canvas(
-    width = 7, height = 5,
-    units = "in", bg = color_paper,
-    dpi = 300
+    width = width_png, height = height_png,
+    units = units_png, bg = color_paper,
+    dpi = dpi_png
   )  
- 
-
+  
 
 # Save --------------------------------------------------------------------
 
